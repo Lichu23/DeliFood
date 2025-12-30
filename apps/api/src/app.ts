@@ -11,6 +11,9 @@ import { errorHandler } from './middlewares/error.middleware';
 import authRoutes from './modules/auth/auth.routes';
 import storesRoutes from './modules/stores/stores.routes';
 import invitationsRoutes from './modules/invitations/invitations.routes';
+import categoriesRoutes from './modules/categories/categories.routes';
+import productsRoutes from './modules/products/products.routes';
+import uploadsRoutes from './modules/uploads/uploads.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -44,6 +47,9 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', storesRoutes);
 app.use('/api', invitationsRoutes);
+app.use('/api', categoriesRoutes);
+app.use('/api', productsRoutes);
+app.use('/api', uploadsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
