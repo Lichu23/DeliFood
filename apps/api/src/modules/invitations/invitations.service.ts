@@ -1,13 +1,13 @@
-import { Role } from '@prisma/client';
-import { randomBytes } from 'crypto';
-import prisma from '../../lib/prisma';
-import { hashPassword } from '../../utils/password';
-import { generateToken } from '../../utils/jwt';
+import { Role } from "@prisma/client";
+import { randomBytes } from "crypto";
+import prisma from "../../lib/prisma";
+import { hashPassword } from "../../utils/password";
+import { generateToken } from "../../utils/jwt";
 import {
   BadRequestError,
   ConflictError,
   NotFoundError,
-} from '../../utils/errors';
+} from "../../utils/errors";
 
 export const invitationsService = {
   /**
@@ -25,7 +25,7 @@ export const invitationsService = {
     });
 
     if (!store) {
-      throw new NotFoundError('Store not found');
+      throw new NotFoundError("Store not found");
     }
 
     // Verificar si ya existe una membresía activa
@@ -44,7 +44,7 @@ export const invitationsService = {
       });
 
       if (existingMembership && existingMembership.isActive) {
-        throw new ConflictError('User is already a member of this store');
+        throw new ConflictError("User is already a member of this store");
       }
     }
 
@@ -59,11 +59,13 @@ export const invitationsService = {
     });
 
     if (existingInvitation) {
-      throw new ConflictError('There is already a pending invitation for this email');
+      throw new ConflictError(
+        "There is already a pending invitation for this email"
+      );
     }
 
     // Generar token único
-    const token = randomBytes(32).toString('hex');
+    const token = randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // Expira en 7 días
 
@@ -101,7 +103,9 @@ export const invitationsService = {
       invitedBy: invitation.invitedBy.name,
       expiresAt: invitation.expiresAt,
       // Solo para desarrollo, en producción no enviar el token
-      invitationLink: `${process.env.APP_URL}/invite/${token}`,
+      invitationLink: `${
+        process.env.APP_URL || "http://localhost:3000"
+      }/invite/${token}`,
     };
   },
 
@@ -119,7 +123,7 @@ export const invitationsService = {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return invitations.map((inv) => ({
@@ -157,15 +161,15 @@ export const invitationsService = {
     });
 
     if (!invitation) {
-      throw new NotFoundError('Invitation not found');
+      throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestError('This invitation has already been used');
+      throw new BadRequestError("This invitation has already been used");
     }
 
     if (invitation.expiresAt < new Date()) {
-      throw new BadRequestError('This invitation has expired');
+      throw new BadRequestError("This invitation has expired");
     }
 
     // Verificar si el usuario ya existe
@@ -199,15 +203,15 @@ export const invitationsService = {
     });
 
     if (!invitation) {
-      throw new NotFoundError('Invitation not found');
+      throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestError('This invitation has already been used');
+      throw new BadRequestError("This invitation has already been used");
     }
 
     if (invitation.expiresAt < new Date()) {
-      throw new BadRequestError('This invitation has expired');
+      throw new BadRequestError("This invitation has expired");
     }
 
     // Verificar que el usuario no existe
@@ -216,7 +220,9 @@ export const invitationsService = {
     });
 
     if (existingUser) {
-      throw new ConflictError('User already exists. Please login and accept the invitation.');
+      throw new ConflictError(
+        "User already exists. Please login and accept the invitation."
+      );
     }
 
     // Hash de la contraseña
@@ -230,7 +236,7 @@ export const invitationsService = {
           email: invitation.email,
           passwordHash,
           name: data.name,
-          phone: data.phone,
+          phone: data.phone || "",
         },
       });
 
@@ -286,15 +292,15 @@ export const invitationsService = {
     });
 
     if (!invitation) {
-      throw new NotFoundError('Invitation not found');
+      throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestError('This invitation has already been used');
+      throw new BadRequestError("This invitation has already been used");
     }
 
     if (invitation.expiresAt < new Date()) {
-      throw new BadRequestError('This invitation has expired');
+      throw new BadRequestError("This invitation has expired");
     }
 
     // Verificar que el usuario existe y el email coincide
@@ -303,7 +309,9 @@ export const invitationsService = {
     });
 
     if (!user || user.email !== invitation.email) {
-      throw new BadRequestError('This invitation is for a different email address');
+      throw new BadRequestError(
+        "This invitation is for a different email address"
+      );
     }
 
     // Verificar que no sea ya miembro
@@ -317,7 +325,7 @@ export const invitationsService = {
     });
 
     if (existingMembership && existingMembership.isActive) {
-      throw new ConflictError('You are already a member of this store');
+      throw new ConflictError("You are already a member of this store");
     }
 
     // Crear o reactivar membresía
@@ -371,11 +379,11 @@ export const invitationsService = {
     });
 
     if (!invitation) {
-      throw new NotFoundError('Invitation not found');
+      throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestError('Cannot cancel a used invitation');
+      throw new BadRequestError("Cannot cancel a used invitation");
     }
 
     await prisma.invitation.delete({
@@ -397,15 +405,15 @@ export const invitationsService = {
     });
 
     if (!invitation) {
-      throw new NotFoundError('Invitation not found');
+      throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.usedAt) {
-      throw new BadRequestError('Cannot resend a used invitation');
+      throw new BadRequestError("Cannot resend a used invitation");
     }
 
     // Generar nuevo token y extender expiración
-    const token = randomBytes(32).toString('hex');
+    const token = randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 

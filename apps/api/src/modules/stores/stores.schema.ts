@@ -5,12 +5,10 @@ export const updateStoreSchema = z.object({
     name: z.string().min(2).optional(),
     description: z.string().optional(),
     phone: z.string().optional(),
-    email: z.string().email().optional(),
+    email: z.email('Invalid email address').optional(),
     address: z.string().min(5).optional(),
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
-    orderMode: z.enum(['IMMEDIATE', 'SCHEDULED', 'HYBRID']).optional(),
-    assignmentMode: z.enum(['SINGLE', 'MANUAL', 'AUTO', 'BROADCAST']).optional(),
     isActive: z.boolean().optional(),
   }),
   params: z.object({

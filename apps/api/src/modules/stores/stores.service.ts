@@ -1,7 +1,7 @@
-import { OrderMode, AssignmentMode, Role } from '@prisma/client';
-import prisma from '../../lib/prisma';
-import { createUniqueSlug } from '../../utils/slug';
-import { NotFoundError, ForbiddenError } from '../../utils/errors';
+import { Role } from "@prisma/client";
+import prisma from "../../lib/prisma";
+import { createUniqueSlug } from "../../utils/slug";
+import { NotFoundError, ForbiddenError } from "../../utils/errors";
 
 export const storesService = {
   /**
@@ -23,7 +23,7 @@ export const storesService = {
     });
 
     if (!store) {
-      throw new NotFoundError('Store not found');
+      throw new NotFoundError("Store not found");
     }
 
     return store;
@@ -38,21 +38,21 @@ export const storesService = {
       include: {
         settings: {
           select: {
-            minOrderAmount: true,
-            estimatedPrepTime: true,
             acceptsCash: true,
             acceptsTransfer: true,
             bankName: true,
             bankAccountHolder: true,
             bankAccountNumber: true,
             bankAlias: true,
+            minAdvanceHours: true,
+            maxAdvanceDays: true,
           },
         },
       },
     });
 
     if (!store || !store.isActive) {
-      throw new NotFoundError('Store not found');
+      throw new NotFoundError("Store not found");
     }
 
     return {
@@ -65,7 +65,7 @@ export const storesService = {
       address: store.address,
       latitude: store.latitude,
       longitude: store.longitude,
-      orderMode: store.orderMode,
+      currency: store.currency,
       settings: store.settings,
     };
   },
@@ -83,8 +83,6 @@ export const storesService = {
       address?: string;
       latitude?: number;
       longitude?: number;
-      orderMode?: OrderMode;
-      assignmentMode?: AssignmentMode;
       isActive?: boolean;
     }
   ) {
@@ -114,28 +112,21 @@ export const storesService = {
   async updateSettings(
     storeId: string,
     data: {
-      minOrderAmount?: number;
-      estimatedPrepTime?: number;
-      immediateCancelMinutes?: number;
-      scheduledCancelHours?: number;
-      allowCancellation?: boolean;
-      minAdvanceHours?: number;
-      maxAdvanceDays?: number;
+      acceptsCash?: boolean;
+      acceptsTransfer?: boolean;
       bankName?: string;
       bankAccountHolder?: string;
       bankAccountNumber?: string;
       bankAlias?: string;
-      acceptsCash?: boolean;
-      acceptsTransfer?: boolean;
+      minAdvanceHours?: number;
+      maxAdvanceDays?: number;
+      immediateCancelMinutes?: number;
+      scheduledCancelHours?: number;
     }
   ) {
-    const settings = await prisma.storeSettings.upsert({
+    const settings = await prisma.storeSettings.update({
       where: { storeId },
-      create: {
-        storeId,
-        ...data,
-      },
-      update: data,
+      data,
     });
 
     return settings;
@@ -157,7 +148,7 @@ export const storesService = {
           },
         },
       },
-      orderBy: { joinedAt: 'asc' },
+      orderBy: { joinedAt: "asc" },
     });
 
     return members.map((m) => ({
@@ -186,17 +177,17 @@ export const storesService = {
     });
 
     if (!member) {
-      throw new NotFoundError('Member not found');
+      throw new NotFoundError("Member not found");
     }
 
     // No se puede cambiar el rol del owner
     if (member.role === Role.OWNER) {
-      throw new ForbiddenError('Cannot change the role of the owner');
+      throw new ForbiddenError("Cannot change the role of the owner");
     }
 
     // No se puede asignar el rol de owner
     if (role === Role.OWNER) {
-      throw new ForbiddenError('Cannot assign owner role');
+      throw new ForbiddenError("Cannot assign owner role");
     }
 
     const updated = await prisma.storeMember.update({
@@ -236,17 +227,17 @@ export const storesService = {
     });
 
     if (!member) {
-      throw new NotFoundError('Member not found');
+      throw new NotFoundError("Member not found");
     }
 
     // No se puede eliminar al owner
     if (member.role === Role.OWNER) {
-      throw new ForbiddenError('Cannot remove the owner');
+      throw new ForbiddenError("Cannot remove the owner");
     }
 
     // No se puede eliminar a uno mismo
     if (member.userId === requestingUserId) {
-      throw new ForbiddenError('Cannot remove yourself');
+      throw new ForbiddenError("Cannot remove yourself");
     }
 
     await prisma.storeMember.update({

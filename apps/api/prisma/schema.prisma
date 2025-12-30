@@ -14,7 +14,7 @@ model User {
   email         String    @unique
   passwordHash  String
   name          String
-  phone         String?
+  phone         String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -24,36 +24,36 @@ model User {
   assignedOrders  Order[]         @relation("AssignedDelivery")
 }
 
+// ==================== TIENDAS ====================
+
 model Store {
   id          String    @id @default(cuid())
   name        String
   slug        String    @unique
   description String?
-  logo        String?
-  phone       String?
+  logo        String
+  phone       String
   email       String?
   address     String
   latitude    Float
   longitude   Float
-  
-  orderMode       OrderMode       @default(IMMEDIATE)
-  assignmentMode  AssignmentMode  @default(MANUAL)
-  isActive        Boolean         @default(true)
+  currency    Currency  @default(EUR)
+  isActive    Boolean   @default(true)
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  ownerId     String
-  owner       User              @relation("StoreOwner", fields: [ownerId], references: [id])
-  members     StoreMember[]
-  invitations Invitation[]
-  settings    StoreSettings?
-  categories  Category[]
-  products    Product[]
+  ownerId       String
+  owner         User              @relation("StoreOwner", fields: [ownerId], references: [id])
+  members       StoreMember[]
+  invitations   Invitation[]
+  settings      StoreSettings?
+  categories    Category[]
+  products      Product[]
   deliveryZones DeliveryZone[]
   deliverySlots DeliverySlot[]
   blockedDates  BlockedDate[]
-  orders      Order[]
+  orders        Order[]
 }
 
 model StoreSettings {
@@ -61,27 +61,27 @@ model StoreSettings {
   storeId     String    @unique
   store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   
-  minOrderAmount        Float     @default(0)
-  estimatedPrepTime     Int       @default(30)
-  
-  immediateCancelMinutes  Int     @default(5)
-  scheduledCancelHours    Int     @default(24)
-  allowCancellation       Boolean @default(true)
-  
-  minAdvanceHours   Int       @default(24)
-  maxAdvanceDays    Int       @default(30)
-  
+  // Pagos
+  acceptsCash       Boolean
+  acceptsTransfer   Boolean
   bankName          String?
   bankAccountHolder String?
   bankAccountNumber String?
   bankAlias         String?
   
-  acceptsCash       Boolean   @default(true)
-  acceptsTransfer   Boolean   @default(false)
+  // Reservas
+  minAdvanceHours   Int
+  maxAdvanceDays    Int
+  
+  // Cancelaciones
+  immediateCancelMinutes  Int
+  scheduledCancelHours    Int
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+// ==================== MIEMBROS Y ROLES ====================
 
 model StoreMember {
   id          String    @id @default(cuid())
@@ -118,6 +118,8 @@ model Invitation {
   @@index([token])
   @@index([email, storeId])
 }
+
+// ==================== CATÁLOGO ====================
 
 model Category {
   id          String    @id @default(cuid())
@@ -161,17 +163,17 @@ model Product {
   @@index([categoryId])
 }
 
+// ==================== ZONAS Y HORARIOS ====================
+
 model DeliveryZone {
   id          String    @id @default(cuid())
   storeId     String
   store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   
   name        String
-  minDistance Float     @default(0)
   maxDistance Float
-  deliveryFee Float     @default(0)
-  minOrder    Float     @default(0)
-  estimatedTime Int     @default(30)
+  deliveryFee Float
+  minOrder    Float
   isActive    Boolean   @default(true)
   
   createdAt   DateTime  @default(now())
@@ -185,11 +187,11 @@ model DeliverySlot {
   storeId     String
   store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   
-  dayOfWeek   Int
-  startTime   String
-  endTime     String
-  maxOrders   Int       @default(5)
-  isActive    Boolean   @default(true)
+  dayOfWeek        Int
+  startTime        String
+  endTime          String
+  maxOrdersPerHour Int
+  isActive         Boolean   @default(true)
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -209,6 +211,8 @@ model BlockedDate {
   
   @@unique([storeId, date])
 }
+
+// ==================== PEDIDOS ====================
 
 model Order {
   id          String      @id @default(cuid())
@@ -283,6 +287,8 @@ model OrderItem {
   @@index([orderId])
 }
 
+// ==================== ENUMS ====================
+
 enum Role {
   OWNER
   ADMIN
@@ -290,17 +296,9 @@ enum Role {
   DELIVERY
 }
 
-enum OrderMode {
-  IMMEDIATE
-  SCHEDULED
-  HYBRID
-}
-
-enum AssignmentMode {
-  SINGLE
-  MANUAL
-  AUTO
-  BROADCAST
+enum Currency {
+  EUR
+  ARS
 }
 
 enum OrderType {

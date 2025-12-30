@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 export const createInvitationSchema = z.object({
   body: z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.email('Invalid email address'),
     role: z.enum(['ADMIN', 'CASHIER', 'DELIVERY'], {
-      errorMap: () => ({ message: 'Role must be ADMIN, CASHIER, or DELIVERY' }),
+      error: 'Role must be ADMIN, CASHIER, or DELIVERY',
     }),
   }),
   params: z.object({
