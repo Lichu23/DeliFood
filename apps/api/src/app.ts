@@ -14,6 +14,9 @@ import invitationsRoutes from './modules/invitations/invitations.routes';
 import categoriesRoutes from './modules/categories/categories.routes';
 import productsRoutes from './modules/products/products.routes';
 import uploadsRoutes from './modules/uploads/uploads.routes';
+import deliveryZonesRoutes from './modules/delivery-zones/delivery-zones.routes';
+import deliverySlotsRoutes from './modules/delivery-slots/delivery-slots.routes';
+import blockedDatesRoutes from './modules/blocked-dates/blocked-dates.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,6 +53,9 @@ app.use('/api', invitationsRoutes);
 app.use('/api', categoriesRoutes);
 app.use('/api', productsRoutes);
 app.use('/api', uploadsRoutes);
+app.use('/api', deliveryZonesRoutes);
+app.use('/api', deliverySlotsRoutes);
+app.use('/api', blockedDatesRoutes);
 
 // 404 handler
 app.use((_req, res) => {
