@@ -1,9 +1,20 @@
-import { OrderStatus, OrderType, PaymentMethod, PaymentStatus, CancelledBy, RefundStatus } from '@prisma/client';
-import prisma from '../../lib/prisma';
-import { calculateRoute } from '../../lib/openroute';
-import { NotFoundError, BadRequestError, ForbiddenError } from '../../utils/errors';
-import { deliveryZonesService } from '../delivery-zones/delivery-zones.service';
-import { blockedDatesService } from '../blocked-dates/blocked-dates.service';
+import {
+  OrderStatus,
+  OrderType,
+  PaymentMethod,
+  PaymentStatus,
+  CancelledBy,
+  RefundStatus,
+} from "@prisma/client";
+import prisma from "../../lib/prisma";
+import { calculateRoute } from "../../lib/openroute";
+import {
+  NotFoundError,
+  BadRequestError,
+  ForbiddenError,
+} from "../../utils/errors";
+import { deliveryZonesService } from "../delivery-zones/delivery-zones.service";
+import { blockedDatesService } from "../blocked-dates/blocked-dates.service";
 
 export const ordersService = {
   /**
@@ -19,11 +30,11 @@ export const ordersService = {
       customerLat: number;
       customerLng: number;
       customerNotes?: string;
-      type: 'IMMEDIATE' | 'SCHEDULED';
+      type: "IMMEDIATE" | "SCHEDULED";
       scheduledDate?: string;
       scheduledSlotStart?: string;
       scheduledSlotEnd?: string;
-      paymentMethod: 'CASH' | 'TRANSFER';
+      paymentMethod: "CASH" | "TRANSFER";
       items: { productId: string; quantity: number; notes?: string }[];
     }
   ) {
@@ -34,7 +45,7 @@ export const ordersService = {
     });
 
     if (!store || !store.isActive) {
-      throw new NotFoundError('Store not found');
+      throw new NotFoundError("Store not found");
     }
 
     // Calcular distancia y buscar zona
@@ -43,14 +54,19 @@ export const ordersService = {
       { lat: data.customerLat, lng: data.customerLng }
     );
 
-    const zone = await deliveryZonesService.findZoneByDistance(store.id, distance);
+    const zone = await deliveryZonesService.findZoneByDistance(
+      store.id,
+      distance
+    );
 
     if (!zone) {
-      throw new BadRequestError('Delivery address is outside our coverage area');
+      throw new BadRequestError(
+        "Delivery address is outside our coverage area"
+      );
     }
 
     // Validar pedidos programados
-    if (data.type === 'SCHEDULED') {
+    if (data.type === "SCHEDULED") {
       await this.validateScheduledOrder(
         store.id,
         data.scheduledDate!,
@@ -71,7 +87,7 @@ export const ordersService = {
     });
 
     if (products.length !== productIds.length) {
-      throw new BadRequestError('Some products are not available');
+      throw new BadRequestError("Some products are not available");
     }
 
     // Calcular subtotal
@@ -104,15 +120,19 @@ export const ordersService = {
     // Obtener siguiente número de orden
     const lastOrder = await prisma.order.findFirst({
       where: { storeId: store.id },
-      orderBy: { orderNumber: 'desc' },
+      orderBy: { orderNumber: "desc" },
     });
     const orderNumber = (lastOrder?.orderNumber || 0) + 1;
 
     // Determinar estado inicial
     const initialStatus =
-      data.paymentMethod === 'CASH' ? OrderStatus.CONFIRMED : OrderStatus.PENDING;
+      data.paymentMethod === "CASH"
+        ? OrderStatus.CONFIRMED
+        : OrderStatus.PENDING;
     const paymentStatus =
-      data.paymentMethod === 'CASH' ? PaymentStatus.CONFIRMED : PaymentStatus.PENDING;
+      data.paymentMethod === "CASH"
+        ? PaymentStatus.CONFIRMED
+        : PaymentStatus.PENDING;
 
     // Crear pedido
     const order = await prisma.order.create({
@@ -136,7 +156,7 @@ export const ordersService = {
         total,
         paymentMethod: data.paymentMethod as PaymentMethod,
         paymentStatus,
-        confirmedAt: data.paymentMethod === 'CASH' ? new Date() : null,
+        confirmedAt: data.paymentMethod === "CASH" ? new Date() : null,
         items: {
           create: orderItems,
         },
@@ -208,7 +228,7 @@ export const ordersService = {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return orders;
@@ -255,7 +275,7 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     return order;
@@ -285,7 +305,7 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     return {
@@ -329,7 +349,7 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     // Validar transición de estado
@@ -338,7 +358,9 @@ export const ordersService = {
     // Si pasa a ON_THE_WAY, calcular ETA
     let estimatedMinutes = order.estimatedMinutes;
     if (status === OrderStatus.ON_THE_WAY && !order.assignedToId) {
-      throw new BadRequestError('Order must be assigned to a delivery person first');
+      throw new BadRequestError(
+        "Order must be assigned to a delivery person first"
+      );
     }
 
     if (status === OrderStatus.ON_THE_WAY) {
@@ -384,7 +406,11 @@ export const ordersService = {
   /**
    * Asigna un repartidor al pedido
    */
-  async assignDelivery(storeId: string, orderId: string, deliveryUserId: string) {
+  async assignDelivery(
+    storeId: string,
+    orderId: string,
+    deliveryUserId: string
+  ) {
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
@@ -393,7 +419,7 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     // Verificar que el usuario es repartidor de la tienda
@@ -401,13 +427,13 @@ export const ordersService = {
       where: {
         storeId,
         userId: deliveryUserId,
-        role: 'DELIVERY',
+        role: "DELIVERY",
         isActive: true,
       },
     });
 
     if (!member) {
-      throw new BadRequestError('User is not a delivery person for this store');
+      throw new BadRequestError("User is not a delivery person for this store");
     }
 
     const updatedOrder = await prisma.order.update({
@@ -442,29 +468,29 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     if (order.paymentMethod !== PaymentMethod.TRANSFER) {
-      throw new BadRequestError('Order is not a transfer payment');
+      throw new BadRequestError("Order is not a transfer payment");
     }
 
     if (order.paymentStatus === PaymentStatus.CONFIRMED) {
-      throw new BadRequestError('Payment is already confirmed');
+      throw new BadRequestError("Payment is already confirmed");
     }
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
         paymentStatus: PaymentStatus.CONFIRMED,
-        status: OrderStatus.CONFIRMED,
+        status: OrderStatus.PREPARING,
         confirmedAt: new Date(),
+        preparingAt: new Date(),
       },
     });
 
     return updatedOrder;
   },
-
   /**
    * Cancela un pedido (tienda)
    */
@@ -477,20 +503,23 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     if (order.status === OrderStatus.DELIVERED) {
-      throw new BadRequestError('Cannot cancel a delivered order');
+      throw new BadRequestError("Cannot cancel a delivered order");
     }
 
     if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestError('Order is already cancelled');
+      throw new BadRequestError("Order is already cancelled");
     }
 
     // Determinar si necesita reembolso
     let refundStatus: RefundStatus | null = null;
-    if (order.paymentMethod === PaymentMethod.TRANSFER && order.paymentStatus === PaymentStatus.CONFIRMED) {
+    if (
+      order.paymentMethod === PaymentMethod.TRANSFER &&
+      order.paymentStatus === PaymentStatus.CONFIRMED
+    ) {
       refundStatus = RefundStatus.PENDING;
     } else if (order.paymentMethod === PaymentMethod.CASH) {
       refundStatus = RefundStatus.NOT_REQUIRED;
@@ -524,15 +553,15 @@ export const ordersService = {
     });
 
     if (!order) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError("Order not found");
     }
 
     if (order.status === OrderStatus.DELIVERED) {
-      throw new BadRequestError('Cannot cancel a delivered order');
+      throw new BadRequestError("Cannot cancel a delivered order");
     }
 
     if (order.status === OrderStatus.CANCELLED) {
-      throw new BadRequestError('Order is already cancelled');
+      throw new BadRequestError("Order is already cancelled");
     }
 
     // Verificar ventana de cancelación
@@ -543,25 +572,30 @@ export const ordersService = {
     if (order.type === OrderType.IMMEDIATE) {
       const cancelWindowMs = settings.immediateCancelMinutes * 60 * 1000;
       if (now.getTime() - orderCreatedAt.getTime() > cancelWindowMs) {
-        throw new BadRequestError('Cancellation window has expired');
+        throw new BadRequestError("Cancellation window has expired");
       }
     } else {
       // Pedido programado
       const scheduledDateTime = new Date(order.scheduledDate!);
-      const [hours, minutes] = order.scheduledSlotStart!.split(':').map(Number);
+      const [hours, minutes] = order.scheduledSlotStart!.split(":").map(Number);
       scheduledDateTime.setHours(hours, minutes, 0, 0);
 
       const cancelDeadline = new Date(scheduledDateTime);
-      cancelDeadline.setHours(cancelDeadline.getHours() - settings.scheduledCancelHours);
+      cancelDeadline.setHours(
+        cancelDeadline.getHours() - settings.scheduledCancelHours
+      );
 
       if (now > cancelDeadline) {
-        throw new BadRequestError('Cancellation window has expired');
+        throw new BadRequestError("Cancellation window has expired");
       }
     }
 
     // Determinar si necesita reembolso
     let refundStatus: RefundStatus | null = null;
-    if (order.paymentMethod === PaymentMethod.TRANSFER && order.paymentStatus === PaymentStatus.CONFIRMED) {
+    if (
+      order.paymentMethod === PaymentMethod.TRANSFER &&
+      order.paymentStatus === PaymentStatus.CONFIRMED
+    ) {
       refundStatus = RefundStatus.PENDING;
     } else if (order.paymentMethod === PaymentMethod.CASH) {
       refundStatus = RefundStatus.NOT_REQUIRED;
@@ -572,7 +606,7 @@ export const ordersService = {
       data: {
         status: OrderStatus.CANCELLED,
         cancelledAt: new Date(),
-        cancelReason: 'Cancelled by customer',
+        cancelReason: "Cancelled by customer",
         cancelledBy: CancelledBy.CUSTOMER,
         refundStatus,
       },
@@ -586,7 +620,7 @@ export const ordersService = {
    */
   validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus) {
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
       [OrderStatus.READY]: [OrderStatus.ON_THE_WAY, OrderStatus.CANCELLED],
@@ -617,7 +651,7 @@ export const ordersService = {
 
     // Verificar anticipación mínima
     const minAdvanceMs = settings.minAdvanceHours * 60 * 60 * 1000;
-    const [startHours, startMinutes] = slotStart.split(':').map(Number);
+    const [startHours, startMinutes] = slotStart.split(":").map(Number);
     const scheduledDateTime = new Date(scheduledDate);
     scheduledDateTime.setHours(startHours, startMinutes, 0, 0);
 
@@ -636,9 +670,12 @@ export const ordersService = {
     }
 
     // Verificar fecha no bloqueada
-    const isBlocked = await blockedDatesService.isDateBlocked(storeId, scheduledDate);
+    const isBlocked = await blockedDatesService.isDateBlocked(
+      storeId,
+      scheduledDate
+    );
     if (isBlocked) {
-      throw new BadRequestError('Selected date is not available');
+      throw new BadRequestError("Selected date is not available");
     }
 
     // Verificar que existe el slot
@@ -654,7 +691,7 @@ export const ordersService = {
     });
 
     if (!slot) {
-      throw new BadRequestError('Selected time slot is not available');
+      throw new BadRequestError("Selected time slot is not available");
     }
 
     // Verificar capacidad del slot
@@ -669,12 +706,13 @@ export const ordersService = {
     });
 
     // Calcular horas en el slot
-    const [endHours, endMinutes] = slotEnd.split(':').map(Number);
-    const slotHours = (endHours * 60 + endMinutes - startHours * 60 - startMinutes) / 60;
+    const [endHours, endMinutes] = slotEnd.split(":").map(Number);
+    const slotHours =
+      (endHours * 60 + endMinutes - startHours * 60 - startMinutes) / 60;
     const maxOrders = slot.maxOrdersPerHour * slotHours;
 
     if (ordersInSlot >= maxOrders) {
-      throw new BadRequestError('Selected time slot is full');
+      throw new BadRequestError("Selected time slot is full");
     }
   },
 
