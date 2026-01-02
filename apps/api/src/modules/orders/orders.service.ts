@@ -7,6 +7,12 @@ import {
   RefundStatus,
 } from "@prisma/client";
 import prisma from "../../lib/prisma";
+import {
+  emitNewOrder,
+  emitOrderUpdated,
+  emitOrderAssigned,
+  emitOrderCancelled,
+} from "../../lib/socket";
 import { calculateRoute } from "../../lib/openroute";
 import {
   NotFoundError,
@@ -127,7 +133,7 @@ export const ordersService = {
     // Determinar estado inicial
     const initialStatus =
       data.paymentMethod === "CASH"
-        ? OrderStatus.CONFIRMED
+        ? OrderStatus.PREPARING
         : OrderStatus.PENDING;
     const paymentStatus =
       data.paymentMethod === "CASH"
@@ -157,6 +163,7 @@ export const ordersService = {
         paymentMethod: data.paymentMethod as PaymentMethod,
         paymentStatus,
         confirmedAt: data.paymentMethod === "CASH" ? new Date() : null,
+        preparingAt: data.paymentMethod === "CASH" ? new Date() : null,
         items: {
           create: orderItems,
         },
@@ -164,6 +171,17 @@ export const ordersService = {
       include: {
         items: true,
       },
+    });
+
+    emitNewOrder(store.id, {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      type: order.type,
+      customerName: order.customerName,
+      total: order.total,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
     });
 
     return {
@@ -400,6 +418,14 @@ export const ordersService = {
       },
     });
 
+    emitOrderUpdated(storeId, {
+      id: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      status: updatedOrder.status,
+      estimatedMinutes: updatedOrder.estimatedMinutes,
+      updatedAt: updatedOrder.updatedAt,
+    });
+
     return updatedOrder;
   },
 
@@ -453,6 +479,13 @@ export const ordersService = {
       },
     });
 
+    emitOrderAssigned(storeId, {
+      id: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      assignedTo: updatedOrder.assignedTo,
+      assignedAt: updatedOrder.assignedAt,
+    });
+
     return updatedOrder;
   },
 
@@ -487,6 +520,14 @@ export const ordersService = {
         confirmedAt: new Date(),
         preparingAt: new Date(),
       },
+    });
+
+    emitOrderUpdated(storeId, {
+      id: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      status: updatedOrder.status,
+      paymentStatus: updatedOrder.paymentStatus,
+      updatedAt: updatedOrder.updatedAt,
     });
 
     return updatedOrder;
@@ -534,6 +575,15 @@ export const ordersService = {
         cancelledBy: CancelledBy.STORE,
         refundStatus,
       },
+    });
+
+    emitOrderCancelled(storeId, {
+      id: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      status: updatedOrder.status,
+      cancelReason: updatedOrder.cancelReason,
+      cancelledBy: updatedOrder.cancelledBy,
+      cancelledAt: updatedOrder.cancelledAt,
     });
 
     return updatedOrder;
@@ -612,6 +662,15 @@ export const ordersService = {
       },
     });
 
+    emitOrderCancelled(order.storeId, {
+      id: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      status: updatedOrder.status,
+      cancelReason: updatedOrder.cancelReason,
+      cancelledBy: updatedOrder.cancelledBy,
+      cancelledAt: updatedOrder.cancelledAt,
+    });
+
     return updatedOrder;
   },
 
@@ -620,7 +679,11 @@ export const ordersService = {
    */
   validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus) {
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING]: [
+        OrderStatus.CONFIRMED,
+        OrderStatus.PREPARING,
+        OrderStatus.CANCELLED,
+      ],
       [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
       [OrderStatus.READY]: [OrderStatus.ON_THE_WAY, OrderStatus.CANCELLED],
