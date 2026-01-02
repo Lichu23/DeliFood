@@ -18,6 +18,7 @@ import deliveryZonesRoutes from './modules/delivery-zones/delivery-zones.routes'
 import deliverySlotsRoutes from './modules/delivery-slots/delivery-slots.routes';
 import blockedDatesRoutes from './modules/blocked-dates/blocked-dates.routes';
 import ordersRoutes from './modules/orders/orders.routes';
+import metricsRoutes from './modules/metrics/metrics.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -58,6 +59,7 @@ app.use('/api', deliveryZonesRoutes);
 app.use('/api', deliverySlotsRoutes);
 app.use('/api', blockedDatesRoutes);
 app.use('/api', ordersRoutes);
+app.use('/api', metricsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
