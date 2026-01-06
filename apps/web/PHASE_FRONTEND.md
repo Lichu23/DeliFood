@@ -4,7 +4,7 @@
 
 | Stage              | Status      | Progress |
 | ------------------ | ----------- | -------- |
-| 🎯 **STAGE 1: MVP** | 🔄 Progress | 3/5      |
+| 🎯 **STAGE 1: MVP** | 🔄 Progress | 4/5      |
 | 🚀 **STAGE 2**     | ⬜ Pending  | 0/4      |
 
 ---
@@ -159,19 +159,21 @@ CANCELLED   → Red
 
 ---
 
-## Phase 4: Catalog Management ⬜ PENDING
+## Phase 4: Catalog Management ✅ COMPLETED
+
+**Branch**: `feat/frontend-phase-4-catalog`
 
 **Features**
-- [ ] Categories list with drag-to-reorder
-- [ ] Category form (create/edit modal)
-- [ ] Products grid view
-- [ ] Product form (create/edit page)
-- [ ] Image upload with preview and crop
-- [ ] Toggle availability switch (real-time)
-- [ ] Filter products by category
-- [ ] Search products by name
-- [ ] Bulk actions (delete, toggle availability)
-- [ ] Empty states
+- [x] Categories list with drag-to-reorder
+- [x] Category form (create/edit modal)
+- [x] Products grid view
+- [x] Product form (create/edit page)
+- [x] Image upload with preview (basic version)
+- [x] Toggle availability switch (real-time)
+- [x] Filter products by category
+- [x] Search products by name
+- [x] Empty states
+- [ ] Bulk actions (deferred to Stage 2)
 
 **Pages**
 ```
@@ -482,11 +484,11 @@ E2E Tests:
 
 # 📋 SUMMARY
 
-## MVP Checklist 🔄 IN PROGRESS (3/5)
+## MVP Checklist 🔄 IN PROGRESS (4/5)
 - [x] Phase 1: Setup & Auth ✅ COMPLETED
 - [x] Phase 2: Dashboard Layout ✅ COMPLETED
 - [x] Phase 3: Orders Management ✅ COMPLETED
-- [ ] Phase 4: Catalog Management
+- [x] Phase 4: Catalog Management ✅ COMPLETED
 - [ ] Phase 5: Public Store
 
 ## Production Checklist ⬜ PENDING (0/4)
@@ -499,22 +501,24 @@ E2E Tests:
 
 # 🎯 CURRENT FOCUS
 
-**Active Branch**: `feat/frontend-phase-3-orders`
-**Current Phase**: Phase 3 - Orders Management (100% complete)
+**Active Branch**: `feat/frontend-phase-4-catalog`
+**Current Phase**: Phase 4 - Catalog Management (100% complete)
 
 **Completed Tasks**:
-1. ✅ Created OrdersList with real-time Socket.io updates
-2. ✅ Created OrderFilters (status, type, payment, date range, search)
-3. ✅ Created OrderCard with status badges
-4. ✅ Created Order Detail page with all information
-5. ✅ Created OrderActions (status change, assign, confirm payment, cancel)
-6. ✅ Created OrderTimeline with status history
-7. ✅ Created dialogs (AssignDelivery, ConfirmPayment, CancelOrder)
-8. ✅ Implemented sound notifications for new orders
-9. ✅ Implemented print functionality
-10. ✅ Fixed controlled component filters bug
+1. ✅ Created types and schemas for categories and products
+2. ✅ Created categories and products services
+3. ✅ Implemented CategoriesList with drag-and-drop reordering (@dnd-kit)
+4. ✅ Created CategoryCard and CategoryFormDialog (CRUD)
+5. ✅ Implemented ProductsGrid with filters and search
+6. ✅ Created ProductCard with availability toggle
+7. ✅ Created ProductFilters (category dropdown + search)
+8. ✅ Built ProductForm for create/edit with validation
+9. ✅ Implemented ImageUploadBasic with Cloudinary integration
+10. ✅ Fixed backend list filtering (includeUnavailable query param)
+11. ✅ Fixed Zustand hydration issue (redirect loop)
+12. ✅ Fixed form type issues (union types for create/update schemas)
 
-**Next Phase**: Phase 4 - Catalog Management
+**Next Phase**: Phase 5 - Public Store
 
 ---
 
