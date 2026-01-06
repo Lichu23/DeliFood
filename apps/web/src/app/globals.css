@@ -24,3 +24,37 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+  @media print {
+    @page {
+      margin: 1cm;
+    }
+
+    body {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .print\:hidden {
+      display: none !important;
+    }
+
+    /* Show only order content when printing */
+    header,
+    nav,
+    footer,
+    button,
+    .no-print {
+      display: none !important;
+    }
+
+    /* Ensure order details print well */
+    .print\:block {
+      display: block !important;
+    }
+
+    /* Prevent page breaks inside order items */
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+  }
