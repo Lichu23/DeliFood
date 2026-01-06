@@ -1,48 +1,51 @@
-'use client';
+  'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/authStore';
+  import { useEffect } from 'react';
+  import { useRouter } from 'next/navigation';
+  import { useAuthStore } from '@/store/authStore';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles?: ('OWNER' | 'ADMIN' | 'CASHIER' | 'DELIVERY')[];
-}
+  interface ProtectedRouteProps {
+    children: React.ReactNode;
+    allowedRoles?: ('OWNER' | 'ADMIN' | 'CASHIER' | 'DELIVERY')[];
+  }
 
-export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const router = useRouter();
-  const { user, currentStore, token } = useAuthStore();
+  export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+    const router = useRouter();
+    const { user, currentStore, token, _hasHydrated } = useAuthStore();
 
-  useEffect(() => {
-    // Si no hay token, redirigir a login
-    if (!token) {
-      router.push('/login');
-      return;
+    useEffect(() => {
+      // Wait for hydration before redirecting
+      if (!_hasHydrated) return;
+
+      // Si no hay token, redirigir a login
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      // Si hay roles permitidos y el usuario no tiene ese rol
+      if (allowedRoles && currentStore && !allowedRoles.includes(currentStore.role)) {
+        router.push('/orders'); // Redirigir a página por defecto
+      }
+    }, [token, currentStore, allowedRoles, router, _hasHydrated]);
+
+    // Show loading while hydrating or checking auth
+    if (!_hasHydrated || !token || !user) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <p className="text-gray-500">Cargando...</p>
+        </div>
+      );
     }
 
     // Si hay roles permitidos y el usuario no tiene ese rol
     if (allowedRoles && currentStore && !allowedRoles.includes(currentStore.role)) {
-      router.push('/orders'); // Redirigir a página por defecto
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <p className="text-gray-500">No tienes permisos para ver esta página.</p>
+        </div>
+      );
     }
-  }, [token, currentStore, allowedRoles, router]);
 
-  // Mostrar loading mientras verifica
-  if (!token || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Cargando...</p>
-      </div>
-    );
+    return <>{children}</>;
   }
-
-  // Si hay roles permitidos y el usuario no tiene ese rol
-  if (allowedRoles && currentStore && !allowedRoles.includes(currentStore.role)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">No tienes permisos para ver esta página.</p>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
