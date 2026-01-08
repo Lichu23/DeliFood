@@ -77,7 +77,22 @@ export default function RegisterPage() {
   const deliveryZones = watch("deliveryZones");
 
   const onSubmit = (data: RegisterInput) => {
+    // Only allow submission on the final step
+    if (currentStep < 5) {
+      return;
+    }
     registerUser(data);
+  };
+
+  const handleFinalSubmit = () => {
+    handleSubmit(onSubmit)();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    // Prevent form submission on Enter key press in steps 1-4
+    if (e.key === "Enter" && currentStep < 5) {
+      e.preventDefault();
+    }
   };
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
@@ -152,7 +167,7 @@ export default function RegisterPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-4">
             {/* Step 1: Datos Personales */}
             {currentStep === 1 && (
               <>
@@ -478,13 +493,14 @@ export default function RegisterPage() {
                 </Button>
               )}
 
-              {currentStep < 4 ? (
+              {currentStep <= 4 ? (
                 <Button type="button" onClick={nextStep} className="flex-1">
                   Siguiente
                 </Button>
               ) : (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={handleFinalSubmit}
                   className="flex-1"
                   isLoading={isRegistering}
                 >

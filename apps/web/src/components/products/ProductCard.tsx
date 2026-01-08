@@ -41,9 +41,9 @@
       <Card className="hover:shadow-md transition-shadow overflow-hidden">
         {/* Image */}
         <div className="relative h-48 bg-gray-100">
-          {product.imageUrl ? (
+          {product.image ? (
             <img
-              src={product.imageUrl}
+              src={product.image}
               alt={product.name}
               className={`w-full h-full object-cover ${
                 !product.isAvailable ? 'opacity-50 grayscale' : ''

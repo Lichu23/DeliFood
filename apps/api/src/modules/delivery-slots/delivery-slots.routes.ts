@@ -12,6 +12,35 @@ import {
 const router = Router();
 
 /**
+ * GET /api/stores/:slug/delivery-slots/available
+ * Obtiene franjas horarias disponibles para una fecha (público)
+ */
+router.get(
+  '/stores/:slug/delivery-slots/available',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { slug } = req.params;
+      const { date } = req.query;
+
+      if (!date || typeof date !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Date query parameter is required (format: YYYY-MM-DD)',
+        });
+      }
+
+      const result = await deliverySlotsService.getAvailableSlots(slug, date);
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * GET /api/stores/:storeId/delivery-slots
  * Lista las franjas horarias
  */

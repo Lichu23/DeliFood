@@ -16,7 +16,7 @@ export const createProductSchema = z.object({
     })
     .positive("El precio debe ser mayor a 0")
     .max(999999.99, "El precio no puede exceder 999,999.99"),
-  imageUrl: z.url("URL de imagen inválida").optional().or(z.literal("")),
+  image: z.string().optional().or(z.literal("")),
   isAvailable: z.boolean().default(true),
   categoryId: z.string().min(1, "La categoría es requerida"),
 });
@@ -37,11 +37,7 @@ export const updateProductSchema = z.object({
     .positive("El precio debe ser mayor a 0")
     .max(999999.99, "El precio no puede exceder 999,999.99")
     .optional(),
-  imageUrl: z
-    .string()
-    .url("URL de imagen inválida")
-    .optional()
-    .or(z.literal("")),
+  image: z.string().optional().or(z.literal("")),
   isAvailable: z.boolean().optional(),
   categoryId: z.string().min(1, "La categoría es requerida").optional(),
   sortOrder: z.number().int().min(0).optional(),

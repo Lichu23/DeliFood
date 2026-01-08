@@ -46,5 +46,7 @@
       );
     }
 
+    console.log('📦 Product loaded for editing:', product);
+
     return <ProductForm product={product} />;
   }

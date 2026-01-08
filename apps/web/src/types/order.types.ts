@@ -31,7 +31,7 @@
       id: string;
       name: string;
       price: number;
-      imageUrl?: string;
+      image?: string;
     };
     quantity: number;
     unitPrice: number;
@@ -164,4 +164,50 @@
 
   export interface CancelOrderDto {
     reason: string;
+  }
+
+    export interface PublicOrderItem {
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string;
+      name: string;
+      image?: string;
+    };
+  }
+
+  export interface PublicOrderDetail {
+    id: string;
+    orderNumber: string;
+    status: OrderStatus;
+    orderType: 'IMMEDIATE' | 'SCHEDULED';
+    paymentMethod: 'CASH' | 'TRANSFER';
+    paymentStatus: 'PENDING' | 'CONFIRMED';
+    subtotal: number;
+    deliveryFee: number;
+    total: number;
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    deliveryAddress: string;
+    deliveryCity: string;
+    deliveryPostalCode?: string;
+    deliveryNotes?: string;
+    scheduledDate?: string;
+    scheduledTime?: string;
+    estimatedDeliveryTime?: string;
+    items: PublicOrderItem[];
+    store: {
+      id: string;
+      name: string;
+      slug: string;
+      currency: 'EUR' | 'ARS';
+    };
+    createdAt: string;
+  }
+
+  export interface PublicOrderDetailResponse {
+    success: boolean;
+    data: PublicOrderDetail;
   }

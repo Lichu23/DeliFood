@@ -43,7 +43,9 @@ export const productsService = {
       image: prod.image,
       isAvailable: prod.isAvailable,
       sortOrder: prod.sortOrder,
+      categoryId: prod.categoryId,
       category: prod.category,
+      storeId: prod.storeId,
       createdAt: prod.createdAt,
       updatedAt: prod.updatedAt,
     }));
@@ -80,7 +82,9 @@ export const productsService = {
       image: product.image,
       isAvailable: product.isAvailable,
       sortOrder: product.sortOrder,
+      categoryId: product.categoryId,
       category: product.category,
+      storeId: product.storeId,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };

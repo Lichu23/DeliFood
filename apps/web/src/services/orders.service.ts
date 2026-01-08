@@ -18,7 +18,7 @@ interface BackendOrderItem {
     id: string;
     name: string;
     price: number;
-    imageUrl?: string;
+    image?: string;
   };
   quantity: number;
   unitPrice: number;
@@ -177,7 +177,7 @@ async list(
             id: item.product?.id || item.productId,
             name: item.product?.name || 'Producto',
             price: item.unitPrice || item.product?.price || 0,
-            imageUrl: item.product?.imageUrl,
+            image: item.product?.image,
           },
           quantity: item.quantity,
           unitPrice: item.unitPrice || item.product?.price || 0,
@@ -265,7 +265,7 @@ async list(
             id: item.product?.id || item.productId,
             name: item.product?.name || "Producto",
             price: item.unitPrice || item.product?.price || 0,
-            imageUrl: item.product?.imageUrl,
+            image: item.product?.image,
           },
           quantity: item.quantity,
           unitPrice: item.unitPrice || item.product?.price || 0,

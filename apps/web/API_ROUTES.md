@@ -1,8 +1,8 @@
 # DeliFood API Documentation - Frontend Guide
 
 **Base URL:** `http://localhost:4000`
-**Version:** 1.0
-**Last Updated:** 2026-01-06
+**Version:** 1.1
+**Last Updated:** 2026-01-07 (Phase 5 Complete)
 
 ---
 
@@ -86,43 +86,241 @@ POST /api/auth/login
 ```
 GET /api/stores/:slug/public
 ```
+**Auth:** None (public route)
 **Use case:** Customer browsing store catalog
-**Returns:** Store info, products, categories, zones, slots, blocked dates
+**Returns:** Complete store information for public view
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Pizza Express Madrid",
+    "slug": "pizza-express-madrid",
+    "description": "Las mejores pizzas de la ciudad",
+    "logoUrl": "https://...",
+    "currency": "EUR",
+    "isActive": true,
+    "categories": [
+      {
+        "id": "uuid",
+        "name": "Pizzas",
+        "description": "Pizzas artesanales",
+        "sortOrder": 1
+      }
+    ],
+    "products": [
+      {
+        "id": "uuid",
+        "name": "Pizza Margarita",
+        "description": "Tomate, mozzarella y albahaca",
+        "price": 12.50,
+        "imageUrl": "https://...",
+        "isAvailable": true,
+        "categoryId": "uuid",
+        "category": {
+          "id": "uuid",
+          "name": "Pizzas"
+        }
+      }
+    ],
+    "deliveryZones": [
+      {
+        "id": "uuid",
+        "name": "Centro",
+        "maxDistance": 5,
+        "deliveryFee": 3.50,
+        "minimumOrder": 15.00
+      }
+    ],
+    "paymentMethods": {
+      "cash": true,
+      "transfer": true
+    }
+  }
+}
+```
+
+**Note:** Only returns products where `isAvailable: true`
+
+---
+
+### Get Available Delivery Slots (NEW in Phase 5)
+```
+GET /api/stores/:slug/delivery-slots/available?date=YYYY-MM-DD
+```
+**Auth:** None (public route)
+**Use case:** Customer selecting scheduled delivery time
+**Query Params:**
+- `date`: Required (format: YYYY-MM-DD, e.g., "2026-01-08")
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "slot": {
+        "id": "uuid",
+        "dayOfWeek": 1,
+        "startTime": "12:00",
+        "endTime": "15:00",
+        "maxOrdersPerHour": 10
+      },
+      "available": true,
+      "remainingCapacity": 8
+    },
+    {
+      "slot": {
+        "id": "uuid",
+        "dayOfWeek": 1,
+        "startTime": "19:00",
+        "endTime": "23:00",
+        "maxOrdersPerHour": 10
+      },
+      "available": false,
+      "remainingCapacity": 0
+    }
+  ]
+}
+```
+
+**Logic:**
+- Calculates day of week from provided date
+- Returns slots matching that day of week
+- Checks blocked dates (returns empty if date is blocked)
+- Calculates remaining capacity for each slot
+- Only returns slots for the specific store
+
+**Example:**
+```
+GET /api/stores/pizza-express-madrid/delivery-slots/available?date=2026-01-08
+```
+
+---
 
 ### Create Order (Customer)
 ```
 POST /api/stores/:slug/orders
 ```
-**Body:**
+**Auth:** None (public route)
+**Use case:** Customer placing an order from public store
+
+**Request Body:**
 ```json
 {
-  "customerName": "Cliente",
-  "customerPhone": "+34666555444",
-  "customerEmail": "cliente@example.com",
-  "deliveryAddress": "Calle Mayor 123",
-  "deliveryLat": 40.4168,
-  "deliveryLng": -3.7038,
   "items": [
     {
       "productId": "uuid",
-      "quantity": 2,
-      "price": 12.50,
-      "notes": "Sin cebolla"
+      "quantity": 2
     }
   ],
-  "orderType": "IMMEDIATE",
-  "paymentMethod": "CASH",
+  "customerName": "María López",
+  "customerPhone": "+34 666 777 888",
+  "customerEmail": "maria@example.com",
+  "deliveryAddress": "Calle Mayor, 15, 3º B",
+  "deliveryCity": "Madrid",
+  "deliveryPostalCode": "28013",
+  "deliveryNotes": "Llamar al timbre",
   "deliveryZoneId": "uuid",
-  "notes": "Timbre 2B"
+  "orderType": "IMMEDIATE",
+  "scheduledDate": "2026-01-08",
+  "scheduledTimeSlot": "slot-uuid",
+  "paymentMethod": "CASH"
 }
 ```
+
+**Field Details:**
+- `items`: Array of products (only productId and quantity, prices calculated server-side)
+- `customerEmail`: Optional
+- `deliveryPostalCode`: Optional
+- `deliveryNotes`: Optional
+- `orderType`: "IMMEDIATE" or "SCHEDULED"
+- `scheduledDate`: Required if orderType is "SCHEDULED" (YYYY-MM-DD)
+- `scheduledTimeSlot`: Required if orderType is "SCHEDULED" (slot UUID)
+- `paymentMethod`: "CASH" or "TRANSFER"
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "orderNumber": "001",
+    "status": "CONFIRMED",
+    "total": 53.50,
+    "estimatedDeliveryTime": "30 minutos"
+  }
+}
+```
+
+**Initial Status:**
+- CASH → CONFIRMED (can start preparing immediately)
+- TRANSFER → PENDING (waiting for payment confirmation)
+
+**Validation:**
+- Store must be active
+- All products must exist and be available
+- Prices calculated from database (don't trust frontend)
+- Validates minimum order for selected zone
+- If SCHEDULED: validates date, slot exists, and capacity available
 
 ### Track Order
 ```
 GET /api/orders/:orderId/track
 ```
-**Use case:** Customer tracking their order
-**Returns:** Order details with real-time status
+**Auth:** None (public route)
+**Use case:** Customer tracking their order status
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "orderNumber": "001",
+    "status": "PREPARING",
+    "orderType": "IMMEDIATE",
+    "paymentMethod": "CASH",
+    "paymentStatus": "CONFIRMED",
+    "subtotal": 50.00,
+    "deliveryFee": 3.50,
+    "total": 53.50,
+    "customerName": "María López",
+    "customerPhone": "+34 666 777 888",
+    "customerEmail": "maria@example.com",
+    "deliveryAddress": "Calle Mayor, 15, 3º B",
+    "deliveryCity": "Madrid",
+    "deliveryPostalCode": "28013",
+    "deliveryNotes": "Llamar al timbre",
+    "scheduledDate": "2026-01-08",
+    "scheduledTime": "19:00 - 23:00",
+    "estimatedDeliveryTime": "30 minutos",
+    "items": [
+      {
+        "id": "uuid",
+        "quantity": 2,
+        "price": 12.50,
+        "product": {
+          "id": "uuid",
+          "name": "Pizza Margarita",
+          "imageUrl": "https://..."
+        }
+      }
+    ],
+    "store": {
+      "id": "uuid",
+      "name": "Pizza Express Madrid",
+      "slug": "pizza-express-madrid",
+      "currency": "EUR"
+    },
+    "createdAt": "2026-01-07T10:30:00.000Z"
+  }
+}
+```
+
+**Note:** Publicly accessible - no authentication required
 
 ### Cancel Order (Customer)
 ```
