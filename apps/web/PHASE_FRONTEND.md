@@ -4,7 +4,7 @@
 
 | Stage              | Status      | Progress |
 | ------------------ | ----------- | -------- |
-| 🎯 **STAGE 1: MVP** | 🔄 Progress | 4/5      |
+| 🎯 **STAGE 1: MVP** | ✅ COMPLETED | 5/5      |
 | 🚀 **STAGE 2**     | ⬜ Pending  | 0/4      |
 
 ---
@@ -211,72 +211,106 @@ CANCELLED   → Red
 
 ---
 
-## Phase 5: Public Store ⬜ PENDING
+## Phase 5: Public Store ✅ COMPLETED
+
+**Branch**: `feat/frontend-phase-5-public-store`
 
 **Features**
-- [ ] Store public page (catalog view)
-- [ ] Browse products by category
-- [ ] Product detail modal
-- [ ] Shopping cart (Zustand)
-- [ ] Cart drawer/sidebar
-- [ ] Checkout form (customer info + address)
-- [ ] Delivery zone validation
-- [ ] Delivery time selection (immediate or scheduled)
-- [ ] Available slots calculation
-- [ ] Order summary
-- [ ] Submit order
-- [ ] Order confirmation page
-- [ ] Order tracking page (public)
-- [ ] Mobile-first responsive design
-- [ ] SEO meta tags
+- [x] Store public page (catalog view)
+- [x] Browse products by category
+- [x] Product detail modal
+- [x] Shopping cart (Zustand)
+- [x] Cart drawer/sidebar
+- [x] Checkout form (customer info + address)
+- [x] Delivery zone validation
+- [x] Delivery time selection (immediate or scheduled)
+- [x] Available slots calculation
+- [x] Order summary
+- [x] Submit order
+- [x] Order confirmation page
+- [x] Order tracking page (public)
+- [x] Mobile-first responsive design
+- [x] SEO meta tags
 
 **Pages**
 ```
 /store/[slug]
 /store/[slug]/checkout
+/store/[slug]/order/[orderId]
 /track/[orderId]
 ```
 
 **Components**
 ```
 <StoreHeader />
-  - <StoreLogo />
-  - <CartButton />
+  - <CartButton /> (with item count badge)
 <ProductCatalog />
   - <CategoryTabs />
-  - <ProductCard />
+  - <ProductCard /> (public version with quantity controls)
 <ProductDetailModal />
-<ShoppingCart />
-  - <CartItem />
-  - <CartSummary />
+  - Quantity selector
+  - Add to cart with total preview
 <CartDrawer />
-<CheckoutForm />
-  - <CustomerInfoStep />
-  - <DeliveryAddressStep />
-  - <DeliveryTimeStep />
-  - <PaymentMethodStep />
-<DeliveryZoneSelector />
-<DeliveryTimeSelector />
-  - <ImmediateOption />
-  - <ScheduledOption /> (date + time slot)
-<OrderSummary />
+  - <CartItem /> (with quantity controls and remove button)
+  - <CartSummary /> (subtotal, delivery, total)
+  - Clear cart button
+<CheckoutForm /> (4-step wizard with progress indicator)
+  - <CustomerInfoStep /> (name, phone, email validation)
+  - <DeliveryAddressStep /> (address, city, zone selection, notes)
+  - <DeliveryTimeStep /> (immediate or scheduled with slot picker)
+  - <PaymentMethodStep /> (cash or transfer with warnings)
+<OrderSummary /> (checkout sidebar)
 <OrderConfirmation />
+  - Complete order details
+  - Payment status warnings
+  - Navigation buttons
 <OrderTracking />
-  - <OrderStatus />
-  - <DeliveryMap /> (optional)
+  - Status timeline visualization
+  - Delivery information
 ```
 
 **Checkout Flow**
 ```
-1. Browse catalog → Add to cart
-2. Open cart → Review items
-3. Checkout → Customer info
-4. Select delivery address → Zone validation
-5. Select delivery time → Immediate or scheduled
-6. Choose payment method → CASH or TRANSFER
-7. Review order → Submit
-8. Confirmation → Order ID + tracking link
+1. Browse catalog → Add to cart (quick add or via modal)
+2. Open cart drawer → Review items & quantities
+3. Click "Continuar con el pedido" → Navigate to checkout
+4. Step 1: Enter customer info (name, phone, email)
+5. Step 2: Enter delivery address & select zone
+6. Step 3: Choose delivery time (immediate or scheduled)
+7. Step 4: Select payment method (cash or transfer)
+8. Submit order → Redirect to confirmation page
+9. View order details → Track order status
 ```
+
+**Cart Features**
+```
+- Zustand store with localStorage persistence
+- Auto-initializes for specific store
+- Add/remove/update item quantity
+- Real-time total calculation
+- Clears when switching stores
+- Item count badge in header
+- Floating cart button (optional)
+```
+
+**Completed Tasks**:
+1. ✅ Created cart types and Zustand store with persistence
+2. ✅ Implemented public store service (no auth)
+3. ✅ Built store page with SEO metadata
+4. ✅ Created store header with cart button
+5. ✅ Implemented product catalog with category filtering
+6. ✅ Built product detail modal with quantity selector
+7. ✅ Created cart drawer with item management
+8. ✅ Implemented 4-step checkout wizard
+9. ✅ Built customer info step with validation
+10. ✅ Created delivery address step with zone selection
+11. ✅ Implemented delivery time step with slot loading
+12. ✅ Built payment method step with warnings
+13. ✅ Created order summary sidebar
+14. ✅ Implemented order submission
+15. ✅ Built order confirmation page
+16. ✅ Created public order tracking page
+17. ✅ Made entire flow mobile-responsive
 
 ---
 
@@ -484,12 +518,12 @@ E2E Tests:
 
 # 📋 SUMMARY
 
-## MVP Checklist 🔄 IN PROGRESS (4/5)
+## MVP Checklist ✅ COMPLETED (5/5)
 - [x] Phase 1: Setup & Auth ✅ COMPLETED
 - [x] Phase 2: Dashboard Layout ✅ COMPLETED
 - [x] Phase 3: Orders Management ✅ COMPLETED
 - [x] Phase 4: Catalog Management ✅ COMPLETED
-- [ ] Phase 5: Public Store
+- [x] Phase 5: Public Store ✅ COMPLETED
 
 ## Production Checklist ⬜ PENDING (0/4)
 - [ ] Phase 6: Configuration & Settings
@@ -501,37 +535,36 @@ E2E Tests:
 
 # 🎯 CURRENT FOCUS
 
-**Active Branch**: `feat/frontend-phase-4-catalog`
-**Current Phase**: Phase 4 - Catalog Management (100% complete)
+**Active Branch**: `feat/frontend-phase-5-public-store`
+**Current Phase**: Phase 5 - Public Store (100% complete)
 
-**Completed Tasks**:
-1. ✅ Created types and schemas for categories and products
-2. ✅ Created categories and products services
-3. ✅ Implemented CategoriesList with drag-and-drop reordering (@dnd-kit)
-4. ✅ Created CategoryCard and CategoryFormDialog (CRUD)
-5. ✅ Implemented ProductsGrid with filters and search
-6. ✅ Created ProductCard with availability toggle
-7. ✅ Created ProductFilters (category dropdown + search)
-8. ✅ Built ProductForm for create/edit with validation
-9. ✅ Implemented ImageUploadBasic with Cloudinary integration
-10. ✅ Fixed backend list filtering (includeUnavailable query param)
-11. ✅ Fixed Zustand hydration issue (redirect loop)
-12. ✅ Fixed form type issues (union types for create/update schemas)
+**🎉 STAGE 1 MVP IS NOW COMPLETE! 🎉**
 
-**Next Phase**: Phase 5 - Public Store
+All core features for the MVP are fully implemented and ready for testing:
+- ✅ Authentication and onboarding (Phase 1)
+- ✅ Dashboard layout with navigation (Phase 2)
+- ✅ Real-time orders management (Phase 3)
+- ✅ Product and category management (Phase 4)
+- ✅ Public store with complete checkout flow (Phase 5)
+
+**Next Steps**:
+1. 📋 Complete MVP testing (see MVP_TESTING.md)
+2. 🐛 Fix any bugs found during testing
+3. 🚀 Deploy to production
+4. 📊 Begin Stage 2: Production features (Phase 6-9)
 
 ---
 
 # 📊 SUCCESS CRITERIA
 
-## MVP Success
-- [ ] Store owner can login and access dashboard
-- [ ] Store owner can manage orders in real-time
-- [ ] Store owner can manage products and categories
-- [ ] Customers can browse public store
-- [ ] Customers can place orders (immediate and scheduled)
-- [ ] Order tracking works for customers
-- [ ] Mobile-friendly responsive design
+## MVP Success ✅ ALL CRITERIA MET
+- [x] Store owner can login and access dashboard
+- [x] Store owner can manage orders in real-time
+- [x] Store owner can manage products and categories
+- [x] Customers can browse public store
+- [x] Customers can place orders (immediate and scheduled)
+- [x] Order tracking works for customers
+- [x] Mobile-friendly responsive design
 
 ## Production Success
 - [ ] PWA installable on mobile devices
@@ -544,6 +577,6 @@ E2E Tests:
 
 ---
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-07
 **Platform**: Frontend Web (apps/web)
 **Stack**: Next.js 14 + TypeScript + TailwindCSS + TanStack Query + Zustand

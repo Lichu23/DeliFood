@@ -5,7 +5,7 @@
     name: string;
     description?: string;
     price: number;
-    imageUrl?: string;
+    image?: string;
     isAvailable: boolean; // Changed from 'available'
     sortOrder: number;
     categoryId: string;
@@ -19,7 +19,7 @@
     name: string;
     description?: string;
     price: number;
-    imageUrl?: string;
+    image?: string;
     isAvailable?: boolean; // Changed from 'available'
     categoryId: string;
   }
@@ -28,7 +28,7 @@
     name?: string;
     description?: string;
     price?: number;
-    imageUrl?: string;
+    image?: string;
     isAvailable?: boolean; // Changed from 'available'
     categoryId?: string;
     sortOrder?: number;

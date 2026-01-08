@@ -56,26 +56,35 @@
         name: product?.name || "",
         description: product?.description || "",
         price: product?.price || 0,
-        imageUrl: product?.imageUrl || "",
+        image: product?.image || "",
         isAvailable: product?.isAvailable ?? true,
         categoryId: product?.categoryId || "",
       },
     });
 
-    // Watch imageUrl for preview
-    const imageUrl = watch("imageUrl");
+    // Watch image for preview
+    const image = watch("image");
+    const categoryId = watch("categoryId");
 
     // Reset form when product changes
     useEffect(() => {
       if (product) {
+        console.log('🔄 Resetting form with product:', {
+          productId: product.id,
+          categoryId: product.categoryId,
+          fullProduct: product,
+        });
+
         reset({
           name: product.name,
           description: product.description || "",
           price: product.price,
-          imageUrl: product.imageUrl || "",
+          image: product.image || "",
           isAvailable: product.isAvailable,
           categoryId: product.categoryId,
         });
+
+        console.log('✅ Form reset complete. Current categoryId:', product.categoryId);
       }
     }, [product, reset]);
 
@@ -135,7 +144,7 @@
     };
 
     const handleImageUpload = (url: string) => {
-      setValue("imageUrl", url);
+      setValue("image", url);
     };
 
     if (!currentStore) {
@@ -247,7 +256,11 @@
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Categoría
                   </label>
-                  <Select {...register("categoryId")} options={categoryOptions} />
+                  <Select
+                    {...register("categoryId")}
+                    value={categoryId}
+                    options={categoryOptions}
+                  />
                   {errors.categoryId && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.categoryId.message}
@@ -279,12 +292,12 @@
             <div className="p-6 space-y-4">
               <h2 className="text-lg font-semibold">Imagen del producto</h2>
               <ImageUploadBasic
-                imageUrl={imageUrl as string}
+                image={image as string}
                 onImageUpload={handleImageUpload}
               />
-              <input type="hidden" {...register("imageUrl")} />
-              {errors.imageUrl && (
-                <p className="text-sm text-red-500">{errors.imageUrl.message}</p>
+              <input type="hidden" {...register("image")} />
+              {errors.image && (
+                <p className="text-sm text-red-500">{errors.image.message}</p>
               )}
             </div>
           </Card>

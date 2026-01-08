@@ -133,9 +133,9 @@ export default function OrderDetailPage() {
                       key={item.id}
                       className="flex items-center gap-4 pb-4 border-b last:border-0"
                     >
-                      {item.product?.imageUrl && (
+                      {item.product?.image && (
                         <img
-                          src={item.product.imageUrl}
+                          src={item.product.image}
                           alt={item.product?.name || "Producto"}
                           className="w-16 h-16 object-cover rounded"
                         />
