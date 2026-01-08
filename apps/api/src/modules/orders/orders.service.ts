@@ -307,16 +307,22 @@ export const ordersService = {
       where: { id: orderId },
       include: {
         items: {
-          select: {
-            name: true,
-            quantity: true,
-            totalPrice: true,
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
           },
         },
         store: {
           select: {
             name: true,
+            slug: true,
             phone: true,
+            currency: true,
           },
         },
       },
@@ -326,6 +332,12 @@ export const ordersService = {
       throw new NotFoundError("Order not found");
     }
 
+    // Formatear scheduledTime si existe
+    let scheduledTime: string | null = null;
+    if (order.scheduledSlotStart && order.scheduledSlotEnd) {
+      scheduledTime = `${order.scheduledSlotStart} - ${order.scheduledSlotEnd}`;
+    }
+
     return {
       id: order.id,
       orderNumber: order.orderNumber,
@@ -333,8 +345,20 @@ export const ordersService = {
       type: order.type,
       estimatedMinutes: order.estimatedMinutes,
       customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      customerEmail: order.customerEmail,
       customerAddress: order.customerAddress,
-      items: order.items,
+      customerNotes: order.customerNotes,
+      scheduledDate: order.scheduledDate,
+      scheduledTime,
+      items: order.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        product: item.product,
+      })),
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,
       total: order.total,

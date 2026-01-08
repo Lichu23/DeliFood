@@ -48,6 +48,24 @@ export const storesService = {
             maxAdvanceDays: true,
           },
         },
+        categories: {
+          orderBy: { sortOrder: 'asc' },
+        },
+        products: {
+          where: { isAvailable: true },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { name: 'asc' },
+        },
+        deliveryZones: {
+          orderBy: { maxDistance: 'asc' },
+        },
       },
     });
 
@@ -66,6 +84,20 @@ export const storesService = {
       latitude: store.latitude,
       longitude: store.longitude,
       currency: store.currency,
+      isActive: store.isActive,
+      categories: store.categories,
+      products: store.products,
+      deliveryZones: store.deliveryZones.map((zone) => ({
+        id: zone.id,
+        name: zone.name,
+        maxDistance: zone.maxDistance,
+        deliveryFee: zone.deliveryFee,
+        minOrder: zone.minOrder,
+      })),
+      paymentMethods: {
+        cash: store.settings?.acceptsCash || false,
+        transfer: store.settings?.acceptsTransfer || false,
+      },
       settings: store.settings,
     };
   },

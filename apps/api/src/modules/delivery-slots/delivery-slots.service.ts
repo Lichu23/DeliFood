@@ -1,5 +1,6 @@
 import prisma from '../../lib/prisma';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { OrderStatus, OrderType } from '@prisma/client';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -222,5 +223,85 @@ export const deliverySlotsService = {
     });
 
     return { success: true };
+  },
+
+  /**
+   * Obtiene franjas horarias disponibles para una fecha (público)
+   */
+  async getAvailableSlots(storeSlug: string, dateString: string) {
+    // Obtener tienda por slug
+    const store = await prisma.store.findUnique({
+      where: { slug: storeSlug },
+    });
+
+    if (!store || !store.isActive) {
+      throw new NotFoundError('Store not found');
+    }
+
+    // Parsear fecha y obtener día de la semana
+    const date = new Date(dateString);
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+
+    // Verificar si la fecha está bloqueada
+    const blockedDate = await prisma.blockedDate.findFirst({
+      where: {
+        storeId: store.id,
+        date: date,
+      },
+    });
+
+    // Si la fecha está bloqueada, retornar array vacío
+    if (blockedDate) {
+      return [];
+    }
+
+    // Obtener todas las franjas activas para ese día de la semana
+    const slots = await prisma.deliverySlot.findMany({
+      where: {
+        storeId: store.id,
+        dayOfWeek: dayOfWeek,
+        isActive: true,
+      },
+      orderBy: { startTime: 'asc' },
+    });
+
+    // Para cada franja, calcular disponibilidad
+    const availableSlots = await Promise.all(
+      slots.map(async (slot) => {
+        // Contar pedidos programados para esta fecha y franja
+        const orderCount = await prisma.order.count({
+          where: {
+            storeId: store.id,
+            type: OrderType.SCHEDULED,
+            scheduledDate: date,
+            scheduledSlotStart: slot.startTime,
+            status: { notIn: [OrderStatus.CANCELLED] },
+          },
+        });
+
+        // Calcular horas en el slot
+        const [startHours, startMinutes] = slot.startTime.split(':').map(Number);
+        const [endHours, endMinutes] = slot.endTime.split(':').map(Number);
+        const slotHours = (endHours * 60 + endMinutes - startHours * 60 - startMinutes) / 60;
+
+        // Capacidad máxima del slot
+        const maxOrders = slot.maxOrdersPerHour * slotHours;
+        const remainingCapacity = maxOrders - orderCount;
+
+        return {
+          slot: {
+            id: slot.id,
+            dayOfWeek: slot.dayOfWeek,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            maxOrdersPerHour: slot.maxOrdersPerHour,
+          },
+          available: remainingCapacity > 0,
+          remainingCapacity: Math.max(0, remainingCapacity),
+        };
+      })
+    );
+
+    return availableSlots;
   },
 };
