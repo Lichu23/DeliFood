@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 import prisma from "../../lib/prisma";
 import { createUniqueSlug } from "../../utils/slug";
 import { NotFoundError, ForbiddenError } from "../../utils/errors";
+import { cacheService, cacheKeys, cacheTTL } from "../../lib/cache";
 
 export const storesService = {
   /**
@@ -30,76 +31,97 @@ export const storesService = {
   },
 
   /**
-   * Obtiene una tienda por slug (público)
+   * Obtiene una tienda por slug (público) - con cache
    */
   async getBySlug(slug: string) {
-    const store = await prisma.store.findUnique({
-      where: { slug },
-      include: {
-        settings: {
-          select: {
-            acceptsCash: true,
-            acceptsTransfer: true,
-            bankName: true,
-            bankAccountHolder: true,
-            bankAccountNumber: true,
-            bankAlias: true,
-            minAdvanceHours: true,
-            maxAdvanceDays: true,
-          },
-        },
-        categories: {
-          orderBy: { sortOrder: 'asc' },
-        },
-        products: {
-          where: { isAvailable: true },
+    const cacheKey = cacheKeys.publicStore(slug);
+
+    // Use cache-aside pattern
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const store = await prisma.store.findUnique({
+          where: { slug },
           include: {
-            category: {
+            settings: {
               select: {
-                id: true,
-                name: true,
+                acceptsCash: true,
+                acceptsTransfer: true,
+                bankName: true,
+                bankAccountHolder: true,
+                bankAccountNumber: true,
+                bankAlias: true,
+                minAdvanceHours: true,
+                maxAdvanceDays: true,
               },
             },
+            categories: {
+              where: { isActive: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+            products: {
+              where: { isAvailable: true },
+              include: {
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+              orderBy: { sortOrder: 'asc' },
+            },
+            deliveryZones: {
+              where: { isActive: true },
+              orderBy: { maxDistance: 'asc' },
+            },
           },
-          orderBy: { name: 'asc' },
-        },
-        deliveryZones: {
-          orderBy: { maxDistance: 'asc' },
-        },
-      },
-    });
+        });
 
-    if (!store || !store.isActive) {
-      throw new NotFoundError("Store not found");
+        if (!store || !store.isActive) {
+          throw new NotFoundError("Store not found");
+        }
+
+        return {
+          id: store.id,
+          name: store.name,
+          slug: store.slug,
+          description: store.description,
+          logo: store.logo,
+          phone: store.phone,
+          address: store.address,
+          latitude: store.latitude,
+          longitude: store.longitude,
+          currency: store.currency,
+          isActive: store.isActive,
+          categories: store.categories,
+          products: store.products,
+          deliveryZones: store.deliveryZones.map((zone) => ({
+            id: zone.id,
+            name: zone.name,
+            maxDistance: zone.maxDistance,
+            deliveryFee: zone.deliveryFee,
+            minOrder: zone.minOrder,
+          })),
+          paymentMethods: {
+            cash: store.settings?.acceptsCash || false,
+            transfer: store.settings?.acceptsTransfer || false,
+          },
+          settings: store.settings,
+        };
+      },
+      cacheTTL.publicStore
+    );
+  },
+
+  /**
+   * Invalida el cache de una tienda (llamar después de actualizaciones)
+   */
+  async invalidateStoreCache(storeId: string, slug?: string) {
+    await cacheService.delPattern(cacheKeys.storePattern(storeId));
+    if (slug) {
+      await cacheService.delPattern(cacheKeys.publicStorePattern(slug));
     }
-
-    return {
-      id: store.id,
-      name: store.name,
-      slug: store.slug,
-      description: store.description,
-      logo: store.logo,
-      phone: store.phone,
-      address: store.address,
-      latitude: store.latitude,
-      longitude: store.longitude,
-      currency: store.currency,
-      isActive: store.isActive,
-      categories: store.categories,
-      products: store.products,
-      deliveryZones: store.deliveryZones.map((zone) => ({
-        id: zone.id,
-        name: zone.name,
-        maxDistance: zone.maxDistance,
-        deliveryFee: zone.deliveryFee,
-        minOrder: zone.minOrder,
-      })),
-      paymentMethods: {
-        cash: store.settings?.acceptsCash || false,
-        transfer: store.settings?.acceptsTransfer || false,
-      },
-      settings: store.settings,
-    };
   },
 
   /**

@@ -39,7 +39,7 @@ model Store {
   longitude   Float
   currency    Currency  @default(EUR)
   isActive    Boolean   @default(true)
-  
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -54,6 +54,9 @@ model Store {
   deliverySlots DeliverySlot[]
   blockedDates  BlockedDate[]
   orders        Order[]
+
+  @@index([isActive])
+  @@index([ownerId])
 }
 
 model StoreSettings {
@@ -158,9 +161,11 @@ model Product {
   updatedAt   DateTime  @updatedAt
   
   orderItems  OrderItem[]
-  
+
   @@index([storeId])
   @@index([categoryId])
+  @@index([storeId, isAvailable])
+  @@index([storeId, categoryId, isAvailable])
 }
 
 // ==================== ZONAS Y HORARIOS ====================

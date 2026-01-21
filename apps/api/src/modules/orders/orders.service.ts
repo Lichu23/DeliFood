@@ -19,6 +19,11 @@ import {
   BadRequestError,
   ForbiddenError,
 } from "../../utils/errors";
+import {
+  parsePaginationParams,
+  createPaginatedResult,
+  PaginationParams,
+} from "../../utils/pagination";
 import { deliveryZonesService } from "../delivery-zones/delivery-zones.service";
 import { blockedDatesService } from "../blocked-dates/blocked-dates.service";
 
@@ -55,15 +60,21 @@ export const ordersService = {
     }
 
     // Calcular distancia y buscar zona
-    const distance = await this.calculateDistance(
-      { lat: store.latitude, lng: store.longitude },
-      { lat: data.customerLat, lng: data.customerLng }
-    );
-
-    const zone = await deliveryZonesService.findZoneByDistance(
-      store.id,
-      distance
-    );
+    // For MVP: if coordinates are (0,0), use the first available zone
+    let zone;
+    if (data.customerLat === 0 && data.customerLng === 0) {
+      // MVP fallback: use the first active zone (sorted by minOrder ascending)
+      zone = await prisma.deliveryZone.findFirst({
+        where: { storeId: store.id, isActive: true },
+        orderBy: { maxDistance: "asc" },
+      });
+    } else {
+      const distance = await this.calculateDistance(
+        { lat: store.latitude, lng: store.longitude },
+        { lat: data.customerLat, lng: data.customerLng }
+      );
+      zone = await deliveryZonesService.findZoneByDistance(store.id, distance);
+    }
 
     if (!zone) {
       throw new BadRequestError(
@@ -198,7 +209,7 @@ export const ordersService = {
   },
 
   /**
-   * Lista pedidos de una tienda
+   * Lista pedidos de una tienda con paginación
    */
   async list(
     storeId: string,
@@ -207,7 +218,7 @@ export const ordersService = {
       type?: OrderType;
       date?: string;
       assignedToId?: string;
-    }
+    } & PaginationParams
   ) {
     const where: any = { storeId };
 
@@ -234,22 +245,32 @@ export const ordersService = {
       where.assignedToId = options.assignedToId;
     }
 
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        items: true,
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
+    const { skip, take, page, limit } = parsePaginationParams({
+      page: options?.page,
+      limit: options?.limit,
     });
 
-    return orders;
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          items: true,
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return createPaginatedResult(orders, total, page, limit);
   },
 
   /**

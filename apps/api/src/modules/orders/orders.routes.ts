@@ -75,7 +75,7 @@ router.post(
 
 /**
  * GET /api/stores/:storeId/orders
- * Listar pedidos de una tienda
+ * Listar pedidos de una tienda (paginado)
  */
 router.get(
   '/stores/:storeId/orders',
@@ -88,10 +88,12 @@ router.get(
         type: req.query.type as any,
         date: req.query.date as string,
         assignedToId: req.query.assignedToId as string,
+        page: req.query.page ? parseInt(req.query.page as string, 10) : undefined,
+        limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
       });
       res.json({
         success: true,
-        data: result,
+        ...result,
       });
     } catch (error) {
       next(error);
