@@ -8,8 +8,16 @@ import {
   ConflictError,
   NotFoundError,
   UnauthorizedError,
+  ForbiddenError,
 } from '../../utils/errors';
 import { RegisterInput, LoginInput } from './auth.schema';
+import {
+  isAccountLocked,
+  recordFailedAttempt,
+  recordSuccessfulLogin,
+  getLockoutRemainingSeconds,
+  getRemainingAttempts,
+} from '../../utils/account-lockout';
 
 export const authService = {
   /**
@@ -135,7 +143,18 @@ export const authService = {
   /**
    * Inicia sesión de un usuario
    */
-  async login(data: LoginInput) {
+  async login(data: LoginInput, ip?: string) {
+    const email = data.email.toLowerCase();
+
+    // Check if account is locked
+    if (isAccountLocked(email, ip)) {
+      const remainingSeconds = getLockoutRemainingSeconds(email, ip);
+      const remainingMinutes = Math.ceil(remainingSeconds / 60);
+      throw new ForbiddenError(
+        `Account temporarily locked. Please try again in ${remainingMinutes} minutes.`
+      );
+    }
+
     // Buscar usuario
     const user = await prisma.user.findUnique({
       where: { email: data.email },
@@ -158,15 +177,37 @@ export const authService = {
     });
 
     if (!user) {
-      throw new UnauthorizedError('Invalid email or password');
+      // Record failed attempt even for non-existent users (prevents enumeration)
+      recordFailedAttempt(email, ip);
+      const remaining = getRemainingAttempts(email, ip);
+      throw new UnauthorizedError(
+        remaining > 0
+          ? `Invalid email or password. ${remaining} attempts remaining.`
+          : 'Invalid email or password.'
+      );
     }
 
     // Verificar contraseña
     const validPassword = await comparePassword(data.password, user.passwordHash);
 
     if (!validPassword) {
-      throw new UnauthorizedError('Invalid email or password');
+      // Record failed attempt
+      const isNowLocked = recordFailedAttempt(email, ip);
+      if (isNowLocked) {
+        throw new ForbiddenError(
+          'Account temporarily locked due to too many failed login attempts. Please try again in 15 minutes.'
+        );
+      }
+      const remaining = getRemainingAttempts(email, ip);
+      throw new UnauthorizedError(
+        remaining > 0
+          ? `Invalid email or password. ${remaining} attempts remaining.`
+          : 'Invalid email or password.'
+      );
     }
+
+    // Clear failed attempts on successful login
+    recordSuccessfulLogin(email, ip);
 
     // Generar token
     const token = generateToken({

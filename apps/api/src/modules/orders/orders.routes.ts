@@ -3,6 +3,7 @@ import { ordersService } from './orders.service';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 import { memberMiddleware, ownerOrAdminMiddleware } from '../../middlewares/roles.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { orderLimiter, publicLimiter } from '../../middlewares/rateLimit.middleware';
 import {
   createOrderSchema,
   updateOrderStatusSchema,
@@ -20,6 +21,7 @@ const router = Router();
  */
 router.post(
   '/stores/:slug/orders',
+  orderLimiter,
   validate(createOrderSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -40,6 +42,7 @@ router.post(
  */
 router.get(
   '/orders/:orderId/track',
+  publicLimiter,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await ordersService.getForTracking(req.params.orderId);

@@ -19,7 +19,9 @@
     "test:unit": "jest --testPathPattern=src/",
     "test:integration": "jest --testPathPattern=tests/integration/",
     "test:e2e": "jest --testPathPattern=tests/e2e/",
-    "test:ci": "jest --ci --coverage --coverageReporters=lcov"
+    "test:ci": "jest --ci --coverage --coverageReporters=lcov",
+    "security:audit": "npm audit && npx ts-node scripts/security-audit.ts",
+    "security:check": "npx ts-node scripts/security-audit.ts"
   },
   "keywords": [],
   "author": "",
