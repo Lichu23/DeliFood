@@ -2,10 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import compression from 'compression';
 import { createServer } from 'http';
 
 import { env } from './config/env';
 import { errorHandler } from './middlewares/error.middleware';
+import { apiLimiter } from './middlewares/rateLimit.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
@@ -25,12 +27,16 @@ const httpServer = createServer(app);
 
 // Middlewares
 app.use(helmet());
+app.use(compression()); // Gzip compression
 app.use(cors({
   origin: env.corsOrigins,
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting (only in production)
+app.use('/api', apiLimiter);
 
 // Logging
 if (env.isDev) {
