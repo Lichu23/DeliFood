@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { strongPasswordSchema } from '../../utils/password-validation';
 
 export const createInvitationSchema = z.object({
   body: z.object({
@@ -16,7 +17,7 @@ export const acceptInvitationSchema = z.object({
   body: z.object({
     token: z.string().min(1, 'Invitation token is required'),
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: strongPasswordSchema,
     phone: z.string().optional(),
   }),
 });

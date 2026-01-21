@@ -6,8 +6,11 @@ import compression from 'compression';
 import { createServer } from 'http';
 
 import { env } from './config/env';
+import { corsConfig, getHelmetConfig, securityConstants } from './config/security';
 import { errorHandler } from './middlewares/error.middleware';
 import { apiLimiter } from './middlewares/rateLimit.middleware';
+import { sanitizeMiddleware } from './middlewares/sanitize.middleware';
+import { originValidationMiddleware, getCsrfTokenHandler } from './middlewares/csrf.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
@@ -25,17 +28,22 @@ import metricsRoutes from './modules/metrics/metrics.routes';
 const app = express();
 const httpServer = createServer(app);
 
-// Middlewares
-app.use(helmet());
-app.use(compression()); // Gzip compression
-app.use(cors({
-  origin: env.corsOrigins,
-  credentials: true,
-}));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Security Middlewares
+app.use(helmet(getHelmetConfig()));
+app.use(cors(corsConfig));
 
-// Rate limiting (only in production)
+// Compression & Parsing
+app.use(compression());
+app.use(express.json({ limit: securityConstants.maxJsonSize }));
+app.use(express.urlencoded({ extended: true, limit: securityConstants.maxUrlencodedSize }));
+
+// Input Sanitization (XSS prevention)
+app.use(sanitizeMiddleware);
+
+// CSRF Protection (Origin validation)
+app.use('/api', originValidationMiddleware);
+
+// Rate limiting
 app.use('/api', apiLimiter);
 
 // Logging
@@ -53,6 +61,9 @@ app.get('/health', (_req, res) => {
     environment: env.nodeEnv,
   });
 });
+
+// CSRF Token endpoint
+app.get('/api/csrf-token', getCsrfTokenHandler);
 
 // API Routes
 app.use('/api/auth', authRoutes);

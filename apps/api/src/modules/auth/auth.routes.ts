@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { authLimiter, loginLimiter, passwordLimiter } from '../../middlewares/rateLimit.middleware';
 import {
   registerSchema,
   loginSchema,
@@ -10,6 +11,9 @@ import {
 } from './auth.schema';
 
 const router = Router();
+
+// Apply auth rate limiter to all auth routes
+router.use(authLimiter);
 
 /**
  * POST /api/auth/register
@@ -37,10 +41,12 @@ router.post(
  */
 router.post(
   '/login',
+  loginLimiter,
   validate(loginSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await authService.login(req.body);
+      const ip = req.ip || req.socket.remoteAddress;
+      const result = await authService.login(req.body, ip);
       res.json({
         success: true,
         data: result,
@@ -99,6 +105,7 @@ router.patch(
 router.post(
   '/change-password',
   authMiddleware,
+  passwordLimiter,
   validate(changePasswordSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

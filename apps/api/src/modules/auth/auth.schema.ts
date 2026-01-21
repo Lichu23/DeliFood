@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { strongPasswordSchema } from '../../utils/password-validation';
 
 // Schema para franjas horarias
 const deliverySlotSchema = z.object({
@@ -21,7 +22,7 @@ export const registerSchema = z.object({
     // Usuario
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: strongPasswordSchema,
     phone: z.string().min(6, 'Phone is required'),
 
     // Tienda
@@ -82,7 +83,7 @@ export const loginSchema = z.object({
 export const changePasswordSchema = z.object({
   body: z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+    newPassword: strongPasswordSchema,
   }),
 });
 
